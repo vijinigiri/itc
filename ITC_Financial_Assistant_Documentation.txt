@@ -1,0 +1,94 @@
+
+### Documentation for ITC Financial Assistant (Gemini RAG)
+
+#### Overview
+The **ITC Financial Assistant (Gemini RAG)** is a Streamlit-based web application that leverages **Retrieval-Augmented Generation (RAG)** to answer questions based on financial data from ITC's annual reports and an additional Excel sheet. The application combines PDF content extraction, embedding-based retrieval, and the power of Google's Gemini LLM to generate answers to financial questions.
+
+This solution is built using multiple libraries, including `Streamlit`, `Tavily`, `Langchain`, `Sentence-Transformers`, and Google's generative AI, and implements the RAG approach for question-answering.
+
+---
+
+### Components
+
+#### 1. **Imports**
+
+The necessary libraries and modules used in this application are:
+
+- **Streamlit (`st`)**: For building the user interface and interacting with the web application.
+- **Tavily (`TavilyClient`)**: For extracting content from ITC's PDF annual reports.
+- **Langchain**: For setting up a retriever-augmented generation pipeline and working with documents.
+- **Sentence-Transformers (`SentenceTransformer`)**: To embed the documents and queries into vectors.
+- **Chroma**: For storing document embeddings and performing similarity-based retrieval.
+- **Google Generative AI (`ChatGoogleGenerativeAI`)**: For answering the financial questions using the generative AI model "Gemini-2.0".
+- **Pandas (`pd`)**: For handling the Excel data.
+- **OS**: For file management (e.g., reading the Excel file).
+
+---
+
+### Flow
+
+#### Step 1: **Extract PDF Content using Tavily**
+The `TavilyClient` is used to extract data from the provided URLs of ITC's annual reports (PDF format). The content is processed and stored as `Document` objects, which contain both the text and metadata (URL).
+
+#### Step 2: **Add Excel Data**
+If an Excel file (`aaa.xlsx`) exists, it is read using `pandas`. Each row from the Excel file is converted to a string and added to the list of documents. Each row is represented as a `Document` object with its content and a metadata tag ("source" set to "excel").
+
+#### Step 3: **Prepare Embeddings**
+Using the `LocalSentenceTransformerEmbeddings` class, the documents are embedded into numerical vectors using the pre-trained `SentenceTransformer` model (`all-MiniLM-L6-v2`). These vectors are then stored in a **Chroma vector database** for fast retrieval.
+
+#### Step 4: **Generative Model Setup**
+- The application uses Google's **Generative AI (Gemini-2.0)**, which is configured using the API key (`genai.configure(api_key="YOUR_GOOGLE_API_KEY")`).
+- A `PromptTemplate` is set up to frame the questions and context in a way that the model can answer using the provided context.
+
+#### Step 5: **RAG Chain Setup**
+- A **retriever** is created from the Chroma vector database.
+- The prompt template is used to format the query and context for the generative model.
+- The RAG pipeline is created, which takes a user query, retrieves relevant documents from the vector database, formats the input using the prompt, and generates an answer through the Gemini model. The answer is parsed into a readable string.
+
+---
+
+### Streamlit UI
+
+1. **Set Page Configuration**
+   - The title and layout of the page are configured using `st.set_page_config()`. The page is titled "ITC Financial Assistant (Gemini RAG)" and uses the "centered" layout.
+
+2. **Input Field for User Question**
+   - A text input field allows users to ask a financial question about ITC. The placeholder text provides an example: "e.g., What was ITC's net profit in 2024?"
+
+3. **Display Answer**
+   - When the user submits a question, the system processes the query using the RAG pipeline and displays the generated answer. A spinner is shown while the system processes the request.
+
+---
+
+### Custom Classes and Functions
+
+#### `LocalSentenceTransformerEmbeddings`
+This class extends `Embeddings` from Langchain and uses the `SentenceTransformer` model to embed documents and queries. The embeddings are returned as lists of vectors.
+
+- **`embed_documents(texts)`**: Embeds a list of documents into vectors.
+- **`embed_query(text)`**: Embeds a single query into a vector.
+
+#### `setup_rag_pipeline()`
+This function sets up the entire RAG pipeline:
+
+1. Extracts PDF content using `TavilyClient`.
+2. Reads the Excel file and adds its data as documents.
+3. Splits documents into smaller chunks using `RecursiveCharacterTextSplitter`.
+4. Creates document embeddings using the custom `LocalSentenceTransformerEmbeddings` class and stores them in a **Chroma** vector store.
+5. Configures the generative model using `ChatGoogleGenerativeAI`.
+6. Creates a **retriever** from the Chroma vector store and combines it with the generative model to form the RAG pipeline.
+7. Returns the final **RAG chain**.
+
+---
+
+### Notes
+
+- **Google API Key**: You need to provide your own Google API key to use the generative model by setting `YOUR_GOOGLE_API_KEY` in the code.
+- **Excel File**: Make sure the file `aaa.xlsx` is available in the root directory where the Streamlit app is being executed.
+- **Caching**: The RAG pipeline is cached using `@st.cache_resource`, ensuring the setup process does not need to be repeated each time the app reloads.
+
+---
+
+### Conclusion
+
+The **ITC Financial Assistant (Gemini RAG)** enables users to ask detailed financial questions about ITC based on its annual reports and data in an Excel file. By leveraging **Retrieval-Augmented Generation (RAG)**, the system provides accurate answers, using the context of the extracted data and advanced generative models like **Gemini-2.0**.
